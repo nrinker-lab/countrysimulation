@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏛️ Post-Colonial Nation Simulator, Dark Mode</title>
+    <!-- Add the building emoji as the favicon for the browser tab -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --primary: #bb86fc;
+            --accent: #03dac6;
+            --accent-hover: #018786;
+            --wealth: #f1c40f;
+            --stability: #4fc3f7;
+            --strength: #ef5350;
+            --card-bg: #1e1e1e;
+            --btn-bg: #333333;
+            --btn-hover: #444444;
+            --panel-bg: #2c2c2c;
+            --outcome-bg: #00332c;
+            --outcome-border: #03dac6;
+            --wiki-bg: #181818;
+            --wiki-border: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .layout-wrapper {
+            display: grid;
+            grid-template-columns: 320px 800px 320px;
+            gap: 20px;
+            max-width: 1540px;
+            width: 100%;
+            justify-content: center;
+            align-items: start;
+        }
+
+        #history-box { grid-column: 1; }
+        .container { grid-column: 2; }
+        #wiki-box { grid-column: 3; }
+
+        .container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .sidebar-box {
+            background: var(--wiki-bg);
+            border: 1px solid var(--wiki-border);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none; 
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .wiki-header {
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .wiki-header h2 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--text-color);
+        }
+        
+        .history-header {
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .history-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--accent);
+        }
+        
+        .history-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+        
+        strong {
+            color: #fff;
+        }
+
+        .wiki-flag {
+            font-size: 68px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .wiki-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .wiki-table th, .wiki-table td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #333;
+        }
+
+        .wiki-table th {
+            text-align: left;
+            color: #aaa;
+            width: 45%;
+        }
+
+        .wiki-table td {
+            text-align: right;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .chart-container {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .chart-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chart-btn {
+            background: #333;
+            color: #aaa;
+            border: 1px solid #555;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+            transition: all 0.2s;
+        }
+
+        .chart-btn.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+            font-weight: bold;
+        }
+
+        canvas {
+            width: 100%;
+            height: 140px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        #snapshot-area {
+            padding: 20px;
+            border-radius: 8px;
+            background: var(--card-bg);
+        }
+
+        .final-charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .final-chart-box {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .final-chart-box h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        .year-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-between;
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            text-align: center;
+            flex: 1;
+            padding: 0 10px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .wealth .stat-value { color: var(--wealth); }
+        .stability .stat-value { color: var(--stability); }
+        .strength .stat-value { color: var(--strength); }
+
+        .progress-bar {
+            height: 12px;
+            background: #444;
+            border-radius: 6px;
+            margin: 8px 0;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .wealth .progress-fill { background: var(--wealth); }
+        .stability .progress-fill { background: var(--stability); }
+        .strength .progress-fill { background: var(--strength); }
+
+        .scene {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .scene.active {
+            display: block;
+        }
+        
+        #start-scene {
+            text-align: center;
+        }
+        
+        #start-scene .input-group {
+            max-width: 400px;
+            margin: 0 auto 20px auto;
+            text-align: left;
+        }
+        
+        #start-scene .primary-btn {
+            max-width: 400px;
+            margin: 10px auto 0 auto;
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background: #2c2c2c;
+            color: white;
+            border: 2px solid #555;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        input[type="range"] {
+            accent-color: var(--accent);
+        }
+
+        button {
+            background-color: var(--btn-bg);
+            color: var(--text-color);
+            border: 1px solid #555;
+            padding: 15px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 12px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background-color: var(--btn-hover);
+            border-color: var(--accent);
+            transform: translateX(5px);
+        }
+
+        button.primary-btn {
+            background-color: var(--primary);
+            color: #000;
+            text-align: center;
+            font-weight: bold;
+            border: none;
+            margin-top: 10px;
+        }
+        
+        button.download-btn {
+            background-color: var(--accent);
+        }
+
+        button.primary-btn:hover, button.download-btn:hover {
+            background-color: #d0a9fa;
+            transform: translateY(-2px);
+            border-color: #d0a9fa;
+        }
+
+        .crisis-image-container {
+            width: 100%;
+            height: 180px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 68px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+            transition: background 0.5s;
+        }
+
+        .crisis-text {
+            font-size: 22px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #ccc;
+        }
+
+        .outcome-box {
+            background: var(--outcome-bg);
+            border-left: 5px solid var(--outcome-border);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            display: none;
+            animation: fadeIn 0.4s;
+        }
+        
+        #outcome-text {
+            font-size: 18px;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        #reset-btn {
+            width: auto;
+            background: transparent;
+            color: #888;
+            border: 1px solid #555;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-bottom: 0;
+            text-align: center;
+        }
+        #reset-btn:hover {
+            color: #ff5252;
+            border-color: #ff5252;
+            transform: none;
+        }
+        
+        @media (max-width: 1500px) {
+            .layout-wrapper {
+                grid-template-columns: 250px 1fr 250px;
+            }
+        }
+        @media (max-width: 1100px) {
+            .layout-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .container { grid-column: 1; }
+            #history-box { grid-column: 1; }
+            #wiki-box { grid-column: 1; }
+            .sidebar-box.history-sidebar {
+                display: none !important; 
+            }
+        }
+        @media (max-width: 900px) {
+            .sidebar-box {
+                position: static;
+                margin-top: 20px;
+            }
+            .final-charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout-wrapper">
+    <div class="sidebar-box history-sidebar" id="history-box">
+        <div class="history-header">
+            <h2>📜 Historical Context</h2>
+        </div>
+        <div class="history-content" id="history-content">
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="top-bar">
+            <div class="year-display" id="year-display"></div>
+            <div class="volume-control">
+                <label for="volume">🔊 Vol:</label>
+                <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
+                <button id="reset-btn" onclick="resetGame()" style="display:none; margin-left: 15px;">Restart</button>
+            </div>
+        </div>
+
+        <div id="start-scene" class="scene active">
+            <h1>Post-Colonial Nation Simulator</h1>
+            <div class="crisis-image-container" style="background: linear-gradient(135deg, #1f1c2c, #928DAB);">🌍</div>
+            <p class="crisis-text" style="font-size: 18px;">The year is 1965. The ruling powers have left, making you the leader of a <strong>newly independent nation</strong>. You face weak buildings, poor roads, and <strong>superpowers</strong> fighting for your loyalty. Your choices over the next 20 years will shape the future of your people.</p>
+            
+            <div class="input-group">
+                <label for="country-name">Nation Name</label>
+                <input type="text" id="country-name" placeholder="e.g. Republic of Zamunda" />
+            </div>
+            
+            <div class="input-group">
+                <label for="capital-name">Capital City</label>
+                <input type="text" id="capital-name" placeholder="e.g. New Kinshasa" />
+            </div>
+
+            <button class="primary-btn" onclick="startGame()">Begin Your Rule</button>
+        </div>
+
+        <div id="game-scene" class="scene">
+            <h3 id="country-display" style="color: #888; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-size: 14px; margin-bottom: 15px;"></h3>
+            
+            <div class="stats-panel">
+                <div class="stat-box wealth">
+                    <div>Wealth</div>
+                    <div class="stat-value" id="stat-wealth">5</div>
+                    <div class="progress-bar"><div class="progress-fill" id="bar-wealth" style="width: 50%;"></div></div>
+                </div>
+                <div class="stat-box stability">
+                    <div>Stability</div>
+                    <div class="stat-value" id="stat-stability">5</div>
+                    <div class="progress-bar"><div class="progress-fill" id="bar-stability" style="width: 50%;"></div></div>
+                </div>
+                <div class="stat-box strength">
+                    <div>Strength</div>
+                    <div class="stat-value" id="stat-strength">5</div>
+                    <div class="progress-bar"><div class="progress-fill" id="bar-strength" style="width: 50%;"></div></div>
+                </div>
+            </div>
+
+            <div id="crisis-container">
+                <h2 id="crisis-title">Crisis Title</h2>
+                <div id="crisis-image" class="crisis-image-container"></div>
+                <p class="crisis-text" id="crisis-text">Crisis description goes here.</p>
+                <div id="options-container">
+                </div>
+            </div>
+
+            <div id="outcome-container" class="outcome-box">
+                <h3 style="margin-top:0; color:var(--accent);">Outcome</h3>
+                <p id="outcome-text" style="line-height: 1.6; color: #e0e0e0;"></p>
+                <div class="nav-controls">
+                    <button class="primary-btn" style="width:auto; padding: 10px 30px;" onclick="nextCrisis()" id="next-btn">Go to Next Year</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-scene" class="scene">
+            <div id="snapshot-area">
+                <h1 id="end-title">1985: History Book Summary</h1>
+                <div id="final-summary" class="crisis-text" style="font-size: 18px;"></div>
+                
+                <div class="final-charts-grid">
+                    <div class="final-chart-box">
+                        <h4>Population History</h4>
+                        <canvas id="final-pop-chart" width="350" height="180"></canvas>
+                    </div>
+                    <div class="final-chart-box">
+                        <h4>GDP History</h4>
+                        <canvas id="final-gdp-chart" width="350" height="180"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <button class="primary-btn download-btn" onclick="downloadSnapshot()">📸 Save Image as PNG</button>
+            <button class="primary-btn" onclick="resetGame()">Play Again (Clears Save)</button>
+        </div>
+    </div>
+
+    <div class="sidebar-box" id="wiki-box">
+        <div class="wiki-header">
+            <div class="wiki-flag">🏴</div>
+            <h2 id="wiki-country-name">Country Name</h2>
+        </div>
+        <table class="wiki-table">
+            <tr>
+                <th>Capital</th>
+                <td id="wiki-capital">Capital City</td>
+            </tr>
+            <tr>
+                <th>Government</th>
+                <td id="wiki-gov">Transitional Republic</td>
+            </tr>
+            <tr>
+                <th>Population</th>
+                <td id="wiki-pop">5,000,000</td>
+            </tr>
+            <tr>
+                <th>GDP</th>
+                <td id="wiki-gdp">$500 Million</td>
+            </tr>
+            <tr>
+                <th>Global Standing</th>
+                <td id="wiki-standing">Newly Independent</td>
+            </tr>
+        </table>
+        
+        <div class="chart-container">
+            <div class="chart-controls">
+                <button class="chart-btn active" id="btn-chart-pop" onclick="setChartType('pop')">Population</button>
+                <button class="chart-btn" id="btn-chart-gdp" onclick="setChartType('gdp')">GDP</button>
+            </div>
+            <canvas id="wiki-chart" width="280" height="150"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playTone(freq, type, duration, volMod = 1) {
+        if (!audioCtx) return;
+        const volSlider = document.getElementById('volume').value;
+        if (volSlider <= 0) return;
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(volSlider * volMod * 0.3, audioCtx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playClick() { playTone(400, 'sine', 0.1, 0.5); }
+    function playStatUp() {
+        if(!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const vol = document.getElementById('volume').value;
+        if (vol <= 0) return;
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, t);
+        osc.frequency.exponentialRampToValueAtTime(600, t + 0.3);
+
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(vol * 0.3, t + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(t + 0.4);
+    }
+    
+    function playStatDown() {
+        if(!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const vol = document.getElementById('volume').value;
+        if (vol <= 0) return;
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, t);
+        osc.frequency.exponentialRampToValueAtTime(150, t + 0.4);
+
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(vol * 0.2, t + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(t + 0.4);
+    }
+
+    let state = {
+        countryName: "",
+        capitalName: "",
+        year: 1965,
+        wealth: 5,
+        stability: 5,
+        strength: 5,
+        pop: 5000000,
+        gdp: 500,
+        gov: "Transitional Republic",
+        standing: "Newly Independent",
+        crisisIndex: 0,
+        isOutcomePhase: false,
+        pendingOutcomeText: "",
+        history: [], 
+        activeChart: 'pop'
+    };
+
+    const formatNumber = (num) => {
+        return new Intl.NumberFormat('en-US').format(num);
+    };
+
+    const formatShortNumber = (num) => {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+        return num.toString();
+    };
+
+    const crises = [
+        {
+            year: 1965, title: "The Naval Blockade", emoji: "⚓", bg: "linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d)",
+            text: "The country that used to rule you, the <strong>Empire of Albion</strong>, has parked three warships off your coast. They demand a 99-year lease on your deep water <strong>harbor</strong> to protect their investments.",
+            histContext: "American naval officer <strong>Matthew Perry</strong> arrived with modern warships to demand <strong>Japan</strong> open its ports for trade. <strong>Japan</strong> signed an <strong>'Unequal Treaty,'</strong> opening its ports and ending 220 years of being alone.",
+            options: [
+                { text: "Take over the port and order the <strong>coastal guns</strong> to aim at them.", w: -2, st: 0, str: 2, out: "The <strong>Albion navy</strong> backs down, but they immediately block your trade. You proved your strength, but the <strong>economy</strong> is hurt." },
+                { text: "Sign the 99-year lease under <strong>pressure</strong>.", w: 2, st: -2, str: -1, out: "<strong>Albion</strong> pays a large sum of money. However, violent protests erupt as citizens view you as a <strong>puppet</strong>." },
+                { text: "Ask the <strong>Soviet Union</strong> for immediate naval support.", w: 0, st: 1, str: -1, out: "<strong>Soviet</strong> submarines arrive, forcing <strong>Albion</strong> to retreat. Your stability is safe, but you owe a huge debt to a new <strong>superpower</strong>." },
+                { text: "Destroy the port's <strong>cranes</strong> and <strong>docks</strong>.", w: -3, st: -1, str: 0, out: "If you cannot control it, no one will. The fleet leaves, but your main source of <strong>money</strong> is destroyed." }
+            ]
+        },
+        {
+            year: 1966, title: "The Copper Strike", emoji: "⛏️", bg: "linear-gradient(135deg, #3E5151, #DECBA4)",
+            text: "Miners in the wealthy northern province of <strong>Katanga</strong> have taken over the <strong>copper mines</strong>. They are striking over unsafe equipment and demanding the profits stay in their area.",
+            histContext: "During the <strong>Industrial Revolution</strong>, factory workers faced dangerous conditions, long hours, and low pay. This led them to form <strong>Labor Unions</strong> and go on strike to demand better treatment.",
+            options: [
+                { text: "Send the elite <strong>military</strong> to retake the mines by force.", w: 1, st: -2, str: -1, out: "The <strong>military</strong> clears the mines, keeping the copper flowing. However, the harsh attack causes deep anger and weakens military morale." },
+                { text: "Give the workers a shared <strong>ownership</strong> stake in the mines.", w: -2, st: 2, str: 0, out: "The miners rejoice and return to work. <strong>Stability</strong> rises, but poor management causes government money from copper to drop." },
+                { text: "Sell the mines to an <strong>American company</strong> to handle the strike.", w: 3, st: -3, str: 0, out: "You get a massive cash payment. The <strong>Americans</strong> hire private soldiers to crush the strike, completely destroying your public approval." },
+                { text: "Stop operations and spend state funds on new <strong>safety gear</strong>.", w: -1, st: 1, str: 0, out: "Operations pause while gear is imported. You lose short-term profits, but the miners <strong>trust</strong> you, preventing violence." }
+            ]
+        },
+        {
+            year: 1967, title: "The Border Skirmish", emoji: "🗺️", bg: "linear-gradient(135deg, #556270, #FF6B6B)",
+            text: "The neighboring <strong>Republic of Zandia</strong> has crossed your southern river border. They have occupied the diamond-rich <strong>Awaso valley</strong>, claiming the border drawn by European rulers in 1890 is unfair.",
+            histContext: "At the <strong>Berlin Conference (1884)</strong>, 14 countries met to divide <strong>Africa</strong> to avoid conflict. Borders were drawn without regard for local ethnic groups, forcing rival groups to live together.",
+            options: [
+                { text: "Launch a full armored <strong>counter-attack</strong>.", w: -2, st: 1, str: 2, out: "Your <strong>tanks</strong> push the Zandians back across the river. National pride surges, but the cost of the fuel drains the treasury." },
+                { text: "Give up the <strong>Awaso valley</strong> to avoid a larger war.", w: 1, st: -3, str: -2, out: "War is avoided, and diamond trade continues legally. However, your generals are furious and the public views you as <strong>weak</strong>." },
+                { text: "Suggest a shared <strong>Economic Zone</strong>.", w: -1, st: 2, str: 0, out: "Intense talks create a treaty to share the profits. It costs money to set up the joint management, but secures a lasting <strong>peace</strong>." },
+                { text: "Fund a secret <strong>rebel group</strong> inside Zandia.", w: -1, st: 0, str: 1, out: "You arm rebels to weaken <strong>Zandia</strong>. They pull troops back from the border, but you have started a secret <strong>war</strong>." }
+            ]
+        },
+        {
+            year: 1968, title: "The Cocoa Crash", emoji: "🍫", bg: "linear-gradient(135deg, #8E0E00, #1F1C18)",
+            text: "Because the old colonial rulers forced your nation to grow only <strong>cocoa</strong>, your economy relies entirely on it. Today, the global price of <strong>cocoa</strong> dropped by 40%.",
+            histContext: "The <strong>British</strong> government took direct control of <strong>India</strong> and forced <strong>India</strong> to export its resources, leaving them vulnerable to market changes.",
+            options: [
+                { text: "Empty the state savings to <strong>pay</strong> the farmers.", w: -3, st: 1, str: 0, out: "You empty the national treasury to ensure farmers can eat, preventing mass <strong>starvation</strong> and riots." },
+                { text: "Order the military to <strong>burn</strong> 30% of the crop to raise prices.", w: -1, st: -2, str: 1, out: "The harsh rule reduces supply and stabilizes the price, but farmers violently clash with the soldiers burning their <strong>livelihoods</strong>." },
+                { text: "Let the free market handle the crash without <strong>government help</strong>.", w: 1, st: -3, str: 0, out: "The government saves money, but the rural provinces completely collapse into starvation, sparking massive <strong>unrest</strong>." },
+                { text: "Take out strict <strong>loans</strong> to start building factories.", w: 0, st: -1, str: -1, out: "You get the funds to build factories, but the strict rules from the foreign banks weaken your national <strong>independence</strong>." }
+            ]
+        },
+        {
+            year: 1969, title: "Operation Red Dawn", emoji: "☢️", bg: "linear-gradient(135deg, #114357, #F29492)",
+            text: "The <strong>Cold War</strong> is getting worse. The <strong>Soviet</strong> leader offers you a shipment of advanced tanks. Hours later, the <strong>US</strong> leader offers money for a massive dam. Both demand you only ally with them.",
+            histContext: "The <strong>US</strong> (Capitalism) and <strong>USSR</strong> (Communism) tried to influence newly independent African nations. Some states remained neutral, while others played the <strong>US</strong> and <strong>USSR</strong> against each other.",
+            options: [
+                { text: "Accept the US Dam and align with the <strong>Capitalists</strong>.", w: 3, st: -1, str: -1, out: "<strong>US</strong> engineers arrive and the economy booms. However, student groups begin a rural rebellion against your government." },
+                { text: "Accept the Soviet Tanks and align with the <strong>Communists</strong>.", w: -1, st: -1, str: 3, out: "Your military becomes the most feared in the region. In response, Western powers block your trade, hurting the <strong>economy</strong>." },
+                { text: "Refuse both and remain <strong>Neutral</strong>.", w: -1, st: 2, str: 0, out: "You give a powerful speech at the UN refusing to be a pawn. You lose the aid, but national pride and <strong>unity</strong> skyrocket." },
+                { text: "Secretly accept <strong>both</strong> offers.", w: 2, st: -2, str: 1, out: "You try to play them against each other. It works briefly, but foreign spies quickly turn your capital into a paranoid <strong>warzone</strong>." }
+            ]
+        },
+        {
+            year: 1970, title: "The Ndebele Uprising", emoji: "✊", bg: "linear-gradient(135deg, #232526, #414345)",
+            text: "The <strong>Ndebele</strong> ethnic group, ignored by your government since independence, has raised their own flag and declared the independent <strong>Republic of Ndebeleland</strong> in the north.",
+            histContext: "<strong>Nationalism</strong> is the belief that people who share a common culture, language, or history should have their own independent nation. This often leads ethnic groups to rebel against larger empires.",
+            options: [
+                { text: "Send the air force to <strong>crush</strong> the rebellion.", w: -2, st: -1, str: 2, out: "The rebellion is bombed into submission. The state remains intact, but the sheer cost and brutality draw international <strong>anger</strong>." },
+                { text: "Change the laws to give them <strong>self-rule</strong>.", w: 0, st: 2, str: -2, out: "You grant them massive freedom to rule themselves. Peace is achieved, but the central government loses direct control over the <strong>north</strong>." },
+                { text: "Send the secret police to <strong>assassinate</strong> their leaders.", w: -1, st: -3, str: 1, out: "The secret police eliminate the leaders. The movement breaks apart, but the north descends into a chaotic and violent <strong>bloodbath</strong>." },
+                { text: "Block the roads to the north and <strong>starve</strong> them out.", w: 1, st: -2, str: -1, out: "You cut off their food and power. The rebellion slowly fails, but the human suffering ruins your international <strong>reputation</strong>." }
+            ]
+        },
+        {
+            year: 1971, title: "The Coltan Discovery", emoji: "💎", bg: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
+            text: "Government scientists have found a massive amount of <strong>Coltan</strong> deep in the central jungle. This is a rare mineral needed to build new electronics.",
+            histContext: "The <strong>Ghana Empire</strong> became wealthy by controlling the crossroads of the gold-salt trade and taxing the merchants who traveled through.",
+            options: [
+                { text: "Create a strict government <strong>monopoly</strong> over the mines.", w: 1, st: 1, str: 1, out: "The state carefully extracts the wealth, leading to steady, well-managed national growth without foreign <strong>interference</strong>." },
+                { text: "Sell the rights to a large <strong>European company</strong>.", w: 3, st: -2, str: -1, out: "You receive an enormous cash payment. However, local native tribes are violently pushed off their land, causing <strong>riots</strong>." },
+                { text: "Allow anyone to mine freely without <strong>rules</strong>.", w: 2, st: -2, str: 0, out: "A chaotic gold rush begins. Wealth pours in, but the jungle turns into a lawless zone controlled by armed <strong>gangs</strong>." },
+                { text: "Declare the jungle a protected <strong>national park</strong>.", w: -2, st: 2, str: 0, out: "You protect the environment and local tribes. You lose a lot of potential wealth, but gain immense international <strong>respect</strong>." }
+            ]
+        },
+        {
+            year: 1972, title: "The Brain Drain", emoji: "🧳", bg: "linear-gradient(135deg, #3a7bd5, #3a6073)",
+            text: "Angry about poor pay and lack of supplies, 60% of your trained doctors and engineers have applied to leave for the <strong>UK</strong> and <strong>US</strong> in a massive <strong>brain drain</strong>.",
+            histContext: "The <strong>Berlin Wall</strong> was built overnight by the <strong>USSR</strong> to stop people from fleeing communist <strong>East Berlin</strong> for capitalist <strong>West Berlin</strong>.",
+            options: [
+                { text: "Cancel their passports and <strong>ban</strong> them from leaving.", w: -1, st: -2, str: 1, out: "You keep the workers by force. Hospitals remain staffed, but anger grows, and secret <strong>escape networks</strong> form." },
+                { text: "Pay massive government <strong>bonuses</strong> to convince them to stay.", w: -3, st: 1, str: 0, out: "The professionals stay, but the massive cost of tripling their pay nearly bankrupts the national <strong>treasury</strong>." },
+                { text: "Let them leave, but heavily <strong>tax</strong> the money they send home.", w: 2, st: -1, str: -2, out: "Foreign money flows back home from the workers, but your own industries and healthcare system suffer without <strong>experts</strong>." },
+                { text: "Invite doctors from allied <strong>socialist nations</strong> to replace them.", w: -1, st: 1, str: 1, out: "Foreign doctors arrive to fill the empty jobs. Healthcare improves, though locals are nervous about the heavy foreign <strong>presence</strong>." }
+            ]
+        },
+        {
+            year: 1973, title: "The Whispering Generals", emoji: "🎖️", bg: "linear-gradient(135deg, #1f4037, #99f2c8)",
+            text: "Your spies report that <strong>General Oumarou</strong> is secretly gathering loyal tank groups just outside the capital. He is using civilian mistakes as a reason for a <strong>military takeover</strong>.",
+            histContext: "Following independence, many nations faced constant government changes. <strong>Military figures</strong> often took over as dictators in <strong>Coups</strong> due to a lack of local leadership experience since <strong>Europeans</strong> had previously run the governments.",
+            options: [
+                { text: "Launch a midnight attack to <strong>arrest</strong> the military leaders.", w: 0, st: -2, str: -2, out: "You arrest Oumarou and his supporters. You survive, but the military command structure is heavily weakened and <strong>confused</strong>." },
+                { text: "Massively increase the military budget and <strong>raise their pay</strong>.", w: -3, st: 1, str: 2, out: "You buy their loyalty with new tanks and massive pay raises, completely sacrificing your civilian schools and <strong>health programs</strong>." },
+                { text: "Create a heavily armed <strong>Presidential Guard</strong> loyal only to you.", w: -1, st: -1, str: 1, out: "You build a private army. The generals are afraid to attack, but extreme political tension grips the <strong>capital</strong>." },
+                { text: "Send Oumarou's troops on a foreign <strong>peacekeeping mission</strong>.", w: -1, st: 2, str: 0, out: "You send the threats to a UN mission abroad. Out of sight, out of mind, and the UN covers most of the <strong>costs</strong>." }
+            ]
+        },
+        {
+            year: 1974, title: "The Debt Crisis", emoji: "📉", bg: "linear-gradient(135deg, #cb2d3e, #ef473a)",
+            text: "Your nation can no longer make the payments on old debts. Foreign banks offer a financial rescue, but demand harsh <strong>cuts</strong> to your public spending.",
+            histContext: "<strong>Germany</strong> printed extreme amounts of money to pay off the $400 Billion required for war debts, rendering their money virtually worthless through hyperinflation.",
+            options: [
+                { text: "Accept the rescue money and <strong>cut</strong> public services.", w: 2, st: -3, str: 0, out: "The economy is saved on paper, and credit flows again. However, massive cuts to food programs and healthcare trigger violent <strong>riots</strong>." },
+                { text: "Refuse to pay the debt entirely and <strong>default</strong>.", w: -3, st: 2, str: -1, out: "You boldly refuse to pay the colonial debts. The citizens cheer your bravery, but global markets block your country from <strong>trading</strong>." },
+                { text: "Print massive amounts of new <strong>money</strong> to pay the debt.", w: -2, st: -2, str: 0, out: "You pay the debt with newly printed money. Prices skyrocket, destroying the savings of the middle class and causing economic <strong>chaos</strong>." },
+                { text: "Seize the wealth of the old colonial <strong>elites</strong> to pay it off.", w: 1, st: -1, str: -1, out: "You seize mansions and bank accounts to pay the banks. You balance the budget, but massive wealth leaves the country as the rich <strong>flee</strong>." }
+            ]
+        },
+        {
+            year: 1975, title: "The Religious Revival", emoji: "🕌", bg: "linear-gradient(135deg, #d38312, #a83279)",
+            text: "A popular religious leader, calling himself the new <strong>Mahdi</strong>, has led a million followers to the capital. They demand the non-religious laws be replaced with strict <strong>religious rules</strong>.",
+            histContext: "The <strong>Shah</strong> acted like a dictator, leading the <strong>Iranian</strong> people to protest and force him out. He was replaced by a religious government led by <strong>Ayatollah Khomeini</strong>, who famously stood up to Western influence.",
+            options: [
+                { text: "Order the military to clear the streets with <strong>weapons</strong>.", w: 0, st: -3, str: 1, out: "The military attacks the protesters. You maintain non-religious laws, but the country is pushed to the edge of a <strong>civil war</strong>." },
+                { text: "Give in and establish a single <strong>State Religion</strong>.", w: -1, st: 2, str: -1, out: "You bow to the movement. Stability returns to the streets, but educated minorities and non-religious people flee the <strong>country</strong>." },
+                { text: "Invite the religious leader to join your <strong>government</strong>.", w: -1, st: 1, str: 1, out: "You give him a formal role, pleasing his followers while you quietly keep real control behind the <strong>scenes</strong>." },
+                { text: "Organize a massive government-funded <strong>counter-protest</strong>.", w: -2, st: -1, str: 0, out: "You spend heavily to bus in your own supporters. You hold the political line, but the nation is deeply and dangerously <strong>divided</strong>." }
+            ]
+        },
+        {
+            year: 1976, title: "The Proxy War", emoji: "🏕️", bg: "linear-gradient(135deg, #5A3F37, #2C7744)",
+            text: "A brutal civil war has started in neighboring <strong>Zandia</strong>, heavily funded by global superpowers. 100,000 desperate <strong>refugees</strong> are currently crowded at your southern border.",
+            histContext: "The <strong>USSR</strong> invaded <strong>Afghanistan</strong> to try to install a pro-communist leader. They spent a decade fighting a grueling war against anti-Soviet Afghan fighters.",
+            options: [
+                { text: "Send your army into Zandia to create a <strong>safe zone</strong>.", w: -2, st: 0, str: -2, out: "Your military action stops the spillover, but your army becomes trapped in a costly and unwinnable foreign <strong>war</strong>." },
+                { text: "Welcome all refugees and build large <strong>camps</strong>.", w: -3, st: 2, str: 0, out: "You open your doors. The kind act unifies your people and wins global praise, but collapses the local border <strong>economy</strong>." },
+                { text: "Guard the border with soldiers and turn everyone <strong>back</strong>.", w: 0, st: -2, str: 1, out: "You build walls and deploy soldiers. Your nation is safe from the conflict, but the cruelty sparks deep anger from your <strong>citizens</strong>." },
+                { text: "Give weapons to the refugees and send them back to <strong>fight</strong>.", w: -1, st: -1, str: 2, out: "You create a rebel group to fight for your interests in Zandia. You project power, but risk being attacked if your side <strong>loses</strong>." }
+            ]
+        },
+        {
+            year: 1977, title: "The Viral Outbreak", emoji: "☣️", bg: "linear-gradient(135deg, #16A085, #F4D03F)",
+            text: "A deadly, highly contagious virus has broken out in the crowded neighborhoods of the capital. The old <strong>hospitals</strong> are completely overwhelmed.",
+            histContext: "The <strong>Bubonic Plague</strong> wiped out an estimated 25% to 60% of <strong>Europe's</strong> population. The <strong>Spanish Flu</strong> pandemic of 1918 struck the world, killing an estimated 50 to 150 million people.",
+            options: [
+                { text: "Order a brutal military <strong>lockdown</strong> of the infected areas.", w: -2, st: -2, str: 1, out: "The army seals the neighborhoods. You stop the spread, but businesses close and trapped citizens riot against the <strong>soldiers</strong>." },
+                { text: "Ignore the virus to keep the factories and economy <strong>open</strong>.", w: 1, st: -3, str: -1, out: "Production continues without stopping, but the massive death toll shatters public hope and heavily weakens the <strong>government</strong>." },
+                { text: "Beg foreign powers for immediate <strong>medical aid</strong>.", w: 0, st: 1, str: -2, out: "Foreign doctors in safety suits save the day. However, it highlights your own government's weakness and inability to protect its <strong>people</strong>." },
+                { text: "Blame the outbreak on foreign spies using <strong>propaganda</strong>.", w: 0, st: -1, str: 2, out: "You deflect blame through the news. Fear rises, but it successfully rallies national pride and support behind <strong>you</strong>." }
+            ]
+        },
+        {
+            year: 1978, title: "Nationalizing the Oil", emoji: "🛢️", bg: "linear-gradient(135deg, #000000, #434343)",
+            text: "Foreign companies still own 80% of your nation's <strong>oil refineries</strong>. After a massive oil spill, the public is violently demanding you take the refineries back.",
+            histContext: "In 1953, <strong>Iran's</strong> leader tried to kick out foreign oil companies to control their own resources. The <strong>United States</strong> and <strong>United Kingdom</strong> overthrew him to protect their access to the oil.",
+            options: [
+                { text: "Take over the refineries and offer no <strong>payment</strong>.", w: -2, st: 2, str: 1, out: "The public celebrates the bold move. However, furious foreign investors completely abandon your country, causing a massive loss of <strong>money</strong>." },
+                { text: "Buy the refineries slowly at a fair <strong>market price</strong>.", w: -3, st: 1, str: 0, out: "It is a massive financial burden that stops all other building projects, but it keeps your international reputation <strong>safe</strong>." },
+                { text: "Leave them in foreign hands, but demand they clean up the <strong>spill</strong>.", w: 2, st: -3, str: 0, out: "Oil revenue continues to flow to the state, but massive protests against foreign control paralyze your major <strong>cities</strong>." },
+                { text: "Heavily tax their profits to build your own <strong>roads</strong>.", w: 1, st: -1, str: -1, out: "You squeeze them for cash. They threaten to cut production, leading to a tense and ongoing economic <strong>standoff</strong>." }
+            ]
+        },
+        {
+            year: 1979, title: "The News Exposé", emoji: "📰", bg: "linear-gradient(135deg, #e6d0ce, #27232a)",
+            text: "Independent journalists have published a massive news story showing how your advisors have stolen millions in state funds and hidden them in <strong>foreign</strong> bank accounts.",
+            histContext: "<strong>Totalitarian Governments</strong> have extreme control over politics, the economy, and personal lives. Any opposition or bad news was silenced.",
+            options: [
+                { text: "Raid the paper, burn the printers, and <strong>arrest</strong> the journalists.", w: 0, st: -2, str: 1, out: "You silence the critics by force. You maintain control, but push anger underground and face immediate global <strong>punishments</strong>." },
+                { text: "Fund a massive state-media campaign to tell a <strong>different story</strong>.", w: -2, st: 1, str: 0, out: "You drown out the truth with loud, expensive news stories. You maintain stability, but the treasury takes a massive <strong>hit</strong>." },
+                { text: "Allow complete press freedom and <strong>fire</strong> your advisors.", w: 0, st: -3, str: -1, out: "The scandal breaks wide open. Your government nearly collapses under the weight of the truth, but you keep your personal <strong>honor</strong>." },
+                { text: "Secretly pay the publishers to <strong>retract</strong> the story.", w: -2, st: 2, str: 0, out: "Massive amounts of quiet money buy their silence. The scandal fades away smoothly, but the state savings are much <strong>lower</strong>." }
+            ]
+        },
+        {
+            year: 1980, title: "The Great Drought", emoji: "☀️", bg: "linear-gradient(135deg, #e65c00, #F9D423)",
+            text: "Two years without rain have completely dried up the main lake. This threatens massive crop failures and stops the nation's <strong>hydroelectric power</strong> plants.",
+            histContext: "<strong>Mao Zedong's</strong> economic plan to rapidly industrialize <strong>China</strong> failed catastrophically, causing starvation and a massive drop in the birth rate.",
+            options: [
+                { text: "Create strict water and power limits enforced by the <strong>military</strong>.", w: -1, st: -2, str: 0, out: "Citizens survive on bare minimums, but anger over the strict government control boils over into the <strong>streets</strong>." },
+                { text: "Begin building a massive, modern <strong>water pipe</strong> system.", w: -3, st: 1, str: 2, out: "This massive building project provides jobs and future security, but completely empties the national <strong>treasury</strong>." },
+                { text: "Buy water and power generators from other countries at <strong>high costs</strong>.", w: -2, st: 1, str: -1, out: "The immediate crisis is avoided, keeping the lights on, but it deepens your reliance on neighboring <strong>states</strong>." },
+                { text: "Force millions of people to move away from the <strong>dry zones</strong>.", w: -2, st: -2, str: 1, out: "Forcibly moving millions causes chaos, misery, and death, but permanently secures the surviving farming <strong>areas</strong>." }
+            ]
+        },
+        {
+            year: 1981, title: "The Smuggling Syndicate", emoji: "🐍", bg: "linear-gradient(135deg, #1D976C, #93F9B9)",
+            text: "A powerful gang known as <strong>The Vipers</strong> is moving weapons and illegal goods across your eastern borders. They are growing rich and well armed enough to fight the <strong>state police</strong>.",
+            histContext: "<strong>Britain</strong> smuggled Opium into <strong>China</strong> to fix trade imbalances. <strong>China</strong> banned it, leading to a major war.",
+            options: [
+                { text: "Declare an all-out military <strong>war</strong> on the gangs.", w: -2, st: -2, str: -2, out: "Blood runs in the streets. The gangs fight back fiercely with heavy weapons, weakening the economy and the military <strong>simultaneously</strong>." },
+                { text: "Make the trade legal and heavily <strong>tax</strong> the routes.", w: 3, st: -1, str: -1, out: "You make the trade legal. Wealth pours in from taxes, but crime bosses now essentially sit in your <strong>government</strong>." },
+                { text: "Ignore the crimes in exchange for a personal cut of the <strong>profits</strong>.", w: 2, st: 0, str: -2, out: "Corruption becomes deep and normal. The state grows richer, while the rule of law and government strength <strong>evaporate</strong>." },
+                { text: "Use the military to take over the smuggling operations <strong>yourself</strong>.", w: 1, st: -1, str: 2, out: "Your army defeats the Vipers and becomes a gang itself. You gain military strength and cash, but lose all moral <strong>authority</strong>." }
+            ]
+        },
+        {
+            year: 1982, title: "The Regional Alliance", emoji: "🤝", bg: "linear-gradient(135deg, #00C9FF, #92FE9D)",
+            text: "Neighboring nations invite you to join a new regional economic and military <strong>alliance</strong>. Their goal is to counter superpower influence. However, joining requires you to eliminate all protective <strong>taxes</strong> on imports.",
+            histContext: "<strong>NATO</strong> was the Western (Capitalist) military alliance. The <strong>Warsaw Pact</strong> was the Eastern (Communist) military alliance.",
+            options: [
+                { text: "Join fully and embrace <strong>free trade</strong> with your neighbors.", w: 2, st: 1, str: -2, out: "Regional trade grows and stability rises, but your fragile local factories are beaten by competition, hurting your economic <strong>independence</strong>." },
+                { text: "Refuse to join in order to protect your local <strong>factories</strong>.", w: -1, st: 0, str: 1, out: "You maintain total independence and protect local jobs, but face severe political and economic isolation in the <strong>region</strong>." },
+                { text: "Demand special rules and exceptions in order to <strong>join</strong>.", w: 1, st: -1, str: 0, out: "You anger your neighbors with your stubborn demands, creating a tense but working regional <strong>partnership</strong>." },
+                { text: "Attempt to create your own rival, militarized <strong>alliance</strong>.", w: -2, st: 1, str: 2, out: "You assert regional dominance, sparking a localized cold war that vastly increases your strength but drains your <strong>treasury</strong>." }
+            ]
+        },
+        {
+            year: 1983, title: "The Red Square Protests", emoji: "🔥", bg: "linear-gradient(135deg, #cb2d3e, #ef473a)",
+            text: "Tens of thousands of university students have occupied the capital's central square. They demand immediate <strong>democratic elections</strong>, free speech, and an end to your long rule.",
+            histContext: "In <strong>Tiananmen Square</strong>, protests broke out hoping for more freedoms. The <strong>Chinese</strong> military sent tanks into the square, violently ending the demonstrations.",
+            options: [
+                { text: "Send riot police with tear gas to <strong>clear</strong> the square.", w: 0, st: -3, str: -1, out: "The violent attack angers an entire generation. The physical streets are clear, but all trust in the government is <strong>gone</strong>." },
+                { text: "Give in to their demands and pass sweeping democratic <strong>reforms</strong>.", w: -2, st: 2, str: -1, out: "You embrace the youth. Civil stability returns, but conservative business leaders and military generals flee the <strong>uncertainty</strong>." },
+                { text: "Close all universities indefinitely and cut the <strong>power</strong>.", w: -1, st: -1, str: 1, out: "You stop the organizing ability of the students, but permanently damage the future education and economic capacity of the <strong>nation</strong>." },
+                { text: "Organize a massive, armed government-funded <strong>counter-protest</strong>.", w: -1, st: -2, str: 2, out: "You pit citizens against each other. It proves your street power, but deeply damages the society, bordering on civil <strong>conflict</strong>." }
+            ]
+        },
+        {
+            year: 1984, title: "The Liberation Front", emoji: "⚔️", bg: "linear-gradient(135deg, #4b134f, #c94b4b)",
+            text: "A radical, heavily armed <strong>militia</strong> has gained massive popular support. They demand the violent execution of all remaining foreign citizens and the seizure of your property.",
+            histContext: "The <strong>Boxer Rebellion (1899)</strong> was a nationalist movement to expel all foreigners from the country. It was defeated by an alliance of foreign armies.",
+            options: [
+                { text: "Order the military to <strong>arrest</strong> the radical leaders for treason.", w: 0, st: -3, str: -1, out: "You attempt to maintain order, but the violent response from the angry public is immediate, fierce, and <strong>bloody</strong>." },
+                { text: "Support the group, seize the property, and join the <strong>radicals</strong>.", w: 3, st: -1, str: -3, out: "You gain massive short-term wealth, but become an international outcast, facing global blockades and a total loss of government <strong>strength</strong>." },
+                { text: "Call for immediate, internationally observed early <strong>elections</strong>.", w: -1, st: 2, str: 0, out: "You let the voters decide your fate. Political tensions ease immediately, though massive economic uncertainty <strong>remains</strong>." },
+                { text: "Step down peacefully and flee into <strong>exile</strong>.", w: 0, st: 0, str: 0, out: "STEP_DOWN_ENDING" } 
+            ]
+        }
+    ];
+
+    function constrain(val) { return Math.max(0, Math.min(10, val)); }
+
+    function saveGame() {
+        localStorage.setItem('simSave', JSON.stringify(state));
+    }
+
+    function loadGame() {
+        let s = localStorage.getItem('simSave');
+        if(s) {
+            state = JSON.parse(s);
+            return true;
+        }
+        return false;
+    }
+
+    function setChartType(type) {
+        state.activeChart = type;
+        document.getElementById('btn-chart-pop').classList.toggle('active', type === 'pop');
+        document.getElementById('btn-chart-gdp').classList.toggle('active', type === 'gdp');
+        renderChartData('wiki-chart', state.activeChart, state.activeChart === 'pop' ? '#4fc3f7' : '#f1c40f', state.activeChart === 'pop' ? 'Population' : 'GDP ($M)');
+    }
+
+    function renderChartData(canvasId, dataKey, colorKey, yLabel) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        const padX = 55; 
+        const padY = 30; 
+        const padTop = 15;
+        const padRight = 15;
+        
+        ctx.clearRect(0, 0, w, h);
+        
+        if (state.history.length < 2) {
+            ctx.fillStyle = '#888';
+            ctx.textAlign = 'center';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('Tracking will begin...', w/2, h/2);
+            return;
+        }
+
+        const data = state.history.map(d => d[dataKey]);
+        let min = Math.min(...data);
+        let max = Math.max(...data);
+        
+        if (max === min) {
+            max += 10;
+            min -= 10;
+        } else {
+            const range = max - min;
+            max += range * 0.1;
+            min = Math.max(0, min - range * 0.1); 
+        }
+
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let i=0; i<4; i++) {
+            let y = padTop + (i/3)*(h - padTop - padY);
+            ctx.moveTo(padX, y);
+            ctx.lineTo(w - padRight, y);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = '#aaa';
+        ctx.font = '10px sans-serif';
+        
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(formatShortNumber(Math.round(max)), padX - 8, padTop);
+        ctx.fillText(formatShortNumber(Math.round(min)), padX - 8, h - padY);
+        
+        ctx.save();
+        ctx.translate(12, h / 2 - 10);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText("1965", padX, h - padY + 8);
+        ctx.fillText(state.history[state.history.length-1].year, w - padRight, h - padY + 8);
+        ctx.fillText("Years", padX + (w - padX - padRight)/2, h - padY + 8);
+
+        ctx.beginPath();
+        ctx.strokeStyle = colorKey;
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        
+        data.forEach((val, i) => {
+            const x = padX + (i / (data.length - 1)) * (w - padX - padRight);
+            const y = h - padY - ((val - min) / (max - min)) * (h - padY - padTop);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(x-2, y-2, 4, 4);
+        });
+        ctx.stroke();
+    }
+
+    function updateWiki() {
+        document.getElementById('wiki-country-name').innerText = state.countryName;
+        document.getElementById('wiki-capital').innerText = state.capitalName;
+        document.getElementById('wiki-pop').innerText = formatNumber(state.pop);
+        document.getElementById('wiki-gdp').innerText = "$" + formatNumber(state.gdp) + " Million";
+        
+        if (state.stability <= 3 && state.strength >= 7) {
+            state.gov = "Military Command";
+        } else if (state.stability >= 8) {
+            state.gov = "Stable Republic";
+        } else if (state.wealth <= 2) {
+            state.gov = "Failing State";
+        } else {
+            state.gov = "Transitional Republic";
+        }
+
+        if (state.strength >= 8) state.standing = "Regional Power";
+        else if (state.wealth >= 8) state.standing = "Economic Hub";
+        else if (state.stability <= 3) state.standing = "Crisis Zone";
+        else state.standing = "Developing Nation";
+
+        document.getElementById('wiki-gov').innerText = state.gov;
+        document.getElementById('wiki-standing').innerText = state.standing;
+        
+        renderChartData('wiki-chart', state.activeChart, state.activeChart === 'pop' ? '#4fc3f7' : '#f1c40f', state.activeChart === 'pop' ? 'Population' : 'GDP ($M)');
+    }
+
+    function updateUI() {
+        document.getElementById('year-display').innerText = `Year: ${state.year}`;
+        if (state.countryName) {
+            document.getElementById('country-display').innerText = state.countryName;
+            document.getElementById('reset-btn').style.display = 'block';
+            document.getElementById('wiki-box').style.display = 'block';
+            document.getElementById('history-box').style.display = 'block';
+            
+            setBarInstant('wealth', state.wealth);
+            setBarInstant('stability', state.stability);
+            setBarInstant('strength', state.strength);
+
+            updateWiki();
+        } else {
+            document.getElementById('reset-btn').style.display = 'none';
+            document.getElementById('wiki-box').style.display = 'none';
+            document.getElementById('history-box').style.display = 'none';
+        }
+    }
+
+    function showScene(sceneId) {
+        document.querySelectorAll('.scene').forEach(el => el.classList.remove('active'));
+        document.getElementById(sceneId).classList.add('active');
+    }
+
+    function startGame() {
+        initAudio();
+        const nameInput = document.getElementById('country-name').value.trim() || "Republic of Zamunda";
+        const capInput = document.getElementById('capital-name').value.trim() || "New Kinshasa";
+        
+        playClick();
+        state.countryName = nameInput;
+        state.capitalName = capInput;
+        state.year = 1965;
+        state.wealth = 5;
+        state.stability = 5;
+        state.strength = 5;
+        state.pop = 5000000;
+        state.gdp = 500;
+        state.gov = "Transitional Republic";
+        state.standing = "Newly Independent";
+        state.crisisIndex = 0;
+        state.isOutcomePhase = false;
+        state.history = [{ year: 1965, pop: state.pop, gdp: state.gdp }];
+        
+        saveGame();
+        updateUI();
+        renderCrisis();
+        showScene('game-scene');
+    }
+
+    function setBarInstant(stat, val) {
+        document.getElementById(`stat-${stat}`).innerText = val;
+        const bar = document.getElementById(`bar-${stat}`);
+        bar.style.transition = 'none';
+        bar.style.width = (val * 10) + '%';
+        void bar.offsetWidth;
+        bar.style.transition = 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+    }
+
+    function renderCrisis() {
+        if (state.crisisIndex >= crises.length) {
+            showFinalOutcome();
+            return;
+        }
+
+        const crisis = crises[state.crisisIndex];
+        document.getElementById('crisis-title').innerText = `${crisis.year}: ${crisis.title}`;
+        document.getElementById('crisis-text').innerHTML = crisis.text;
+        document.getElementById('history-content').innerHTML = `<p>${crisis.histContext}</p>`;
+        
+        const imgContainer = document.getElementById('crisis-image');
+        imgContainer.innerText = crisis.emoji;
+        imgContainer.style.background = crisis.bg;
+
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+        document.getElementById('outcome-container').style.display = 'none';
+        optionsContainer.style.display = 'block';
+
+        crisis.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.innerHTML = `<strong>Option ${idx + 1}:</strong> ${opt.text}`;
+            btn.onclick = () => handleOptionClick(opt);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function handleOptionClick(option) {
+        initAudio();
+        playClick();
+        
+        document.getElementById('options-container').style.display = 'none';
+
+        if (option.out === "STEP_DOWN_ENDING") {
+            await sleep(300);
+            showStepDownEnding();
+            return;
+        }
+
+        let growthRate = 1.02; 
+        if (option.st < 0) growthRate -= 0.01;
+        if (option.str < 0) growthRate -= 0.015;
+        state.pop = Math.floor(state.pop * growthRate);
+
+        let gdpChange = (option.w * 40); 
+        state.gdp = Math.max(10, state.gdp + gdpChange + 15);
+
+        const diffs = [
+            { stat: 'wealth', val: option.w },
+            { stat: 'stability', val: option.st },
+            { stat: 'strength', val: option.str }
+        ];
+
+        state.wealth = constrain(state.wealth + option.w);
+        state.stability = constrain(state.stability + option.st);
+        state.strength = constrain(state.strength + option.str);
+
+        state.history.push({
+            year: crises[state.crisisIndex].year + 1,
+            pop: state.pop,
+            gdp: state.gdp
+        });
+
+        saveGame();
+        updateWiki();
+
+        for (let d of diffs) {
+            if (d.val !== 0) {
+                await sleep(400); 
+                let targetVal = state[d.stat];
+                
+                document.getElementById(`stat-${d.stat}`).innerText = targetVal;
+                document.getElementById(`bar-${d.stat}`).style.width = (targetVal * 10) + '%';
+                
+                if (d.val > 0) {
+                    playStatUp();
+                } else {
+                    playStatDown();
+                }
+            }
+        }
+
+        await sleep(500);
+
+        state.isOutcomePhase = true;
+        state.pendingOutcomeText = option.out;
+        saveGame();
+        
+        const outcomeBox = document.getElementById('outcome-container');
+        document.getElementById('outcome-text').innerHTML = option.out;
+        outcomeBox.style.display = 'block';
+    }
+
+    function nextCrisis() {
+        playClick();
+        state.crisisIndex++;
+        if(state.crisisIndex < crises.length) {
+            state.year = crises[state.crisisIndex].year;
+        }
+        state.isOutcomePhase = false;
+        state.pendingOutcomeText = "";
+        
+        saveGame();
+        updateUI();
+        
+        if (state.crisisIndex >= crises.length) {
+            showFinalOutcome();
+        } else {
+            renderCrisis();
+        }
+    }
+
+    function getTier(val, highLabel, avgLabel, lowLabel) {
+        if (val >= 7) return highLabel;
+        if (val <= 3) return lowLabel;
+        return avgLabel;
+    }
+
+    function drawFinalCharts() {
+        setTimeout(() => {
+            renderChartData('final-pop-chart', 'pop', '#4fc3f7', 'Population');
+            renderChartData('final-gdp-chart', 'gdp', '#f1c40f', 'GDP ($M)');
+        }, 100);
+    }
+
+    function showFinalOutcome() {
+        document.getElementById('history-box').style.display = 'none'; 
+        document.getElementById('end-title').innerText = "1985: History Book Summary";
+        const wTier = getTier(state.wealth, "a Prosperous Economy", "Stable Finances", "a Struggling Economy");
+        const stTier = getTier(state.stability, "enjoying Internal Peace", "managing Tense Borders", "plagued by Frequent Unrest");
+        const strTier = getTier(state.strength, "holding Powerful Regional Influence", "maintaining Moderate Strength", "operating as a Weakened State");
+
+        const summary = `
+        After 20 turbulent years (1965 to 1985), history will remember the nation of <strong style="color:var(--primary)">${state.countryName}</strong> as a post-colonial survivor. By the end of your era, the nation was known for having ${wTier}, while ${stTier}, and ultimately ${strTier}. You navigated the impossible choices of independence during the Cold War. <br><br>
+        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent);">
+            <strong>Starting State (1965):</strong> Transitional Republic<br>
+            <strong>Ending State (${state.year}):</strong> ${state.gov}<br>
+            <strong>Final Population:</strong> ${formatNumber(state.pop)}<br>
+            <strong>Final GDP:</strong> $${formatNumber(state.gdp)} Million
+        </div>`;
+        
+        document.getElementById('final-summary').innerHTML = summary;
+        showScene('end-scene');
+        drawFinalCharts();
+    }
+
+    function showStepDownEnding() {
+        document.getElementById('history-box').style.display = 'none'; 
+        document.getElementById('end-title').innerText = "1984: The Resignation";
+        const summary = `
+        <strong style="color:var(--accent)">A peaceful transition:</strong> You recognized the shifting political winds and stepped aside. Your newly independent nation avoids civil war, but your personal legacy is left to the history books. Your 19-year rule has come to an end.<br><br>
+        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent);">
+            <strong>Starting State (1965):</strong> Transitional Republic<br>
+            <strong>Ending State (${state.year}):</strong> ${state.gov}<br>
+            <strong>Final Population:</strong> ${formatNumber(state.pop)}<br>
+            <strong>Final GDP:</strong> $${formatNumber(state.gdp)} Million
+        </div>`;
+        document.getElementById('final-summary').innerHTML = summary;
+        updateUI();
+        showScene('end-scene');
+        drawFinalCharts();
+    }
+    
+    function downloadSnapshot() {
+        playClick();
+        const element = document.getElementById('snapshot-area');
+        
+        html2canvas(element, {
+            backgroundColor: '#1e1e1e',
+            scale: 2 
+        }).then(canvas => {
+            let link = document.createElement('a');
+            let safeName = state.countryName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            link.download = `${safeName}_1985_report.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
+    function resetGame() {
+        playClick();
+        localStorage.removeItem('simSave');
+        state = { countryName: "", capitalName: "", year: 1965, wealth: 5, stability: 5, strength: 5, pop: 5000000, gdp: 500, gov: "Transitional Republic", standing: "Newly Independent", crisisIndex: 0, isOutcomePhase: false, pendingOutcomeText: "", history: [], activeChart: 'pop' };
+        document.getElementById('country-name').value = '';
+        document.getElementById('capital-name').value = '';
+        updateUI();
+        showScene('start-scene');
+    }
+
+    window.onload = () => {
+        if (loadGame() && state.countryName) {
+            updateUI();
+            if (state.crisisIndex >= crises.length || (state.isOutcomePhase && state.pendingOutcomeText === "STEP_DOWN_ENDING")) {
+                showFinalOutcome();
+            } else {
+                showScene('game-scene');
+                if (state.isOutcomePhase) {
+                    const crisis = crises[state.crisisIndex];
+                    document.getElementById('crisis-title').innerText = `${crisis.year}: ${crisis.title}`;
+                    document.getElementById('crisis-text').innerHTML = crisis.text;
+                    document.getElementById('history-content').innerHTML = `<p>${crisis.histContext}</p>`;
+                    document.getElementById('options-container').style.display = 'none';
+                    document.getElementById('outcome-text').innerHTML = state.pendingOutcomeText;
+                    document.getElementById('outcome-container').style.display = 'block';
+                } else {
+                    renderCrisis();
+                }
+            }
+        } else {
+            showScene('start-scene');
+            updateUI();
+        }
+    };
+
+</script>
+
+</body>
+</html>
