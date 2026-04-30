@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏛️ Post-Colonial Nation Simulator, Dark Mode</title>
-    <!-- Add the building emoji as the favicon for the browser tab -->
+    <title>Post-Colonial Nation Simulator</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -35,6 +34,7 @@
             padding: 20px;
             display: flex;
             justify-content: center;
+            /* Removed overflow-x: hidden to allow scrolling when zoomed in */
         }
 
         .layout-wrapper {
@@ -212,6 +212,89 @@
             color: #ccc;
         }
 
+        /* Badge Styling */
+        .leadership-badge {
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 10px rgba(187, 134, 252, 0.1); }
+            to { box-shadow: 0 0 25px rgba(187, 134, 252, 0.4); }
+        }
+
+        .badge-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .badge-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .badge-desc {
+            font-size: 16px;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        /* Era Overlay Styling */
+        #era-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(18, 18, 18, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease-in-out;
+            text-align: center;
+        }
+
+        #era-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .era-emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .era-title {
+            font-size: 36px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .era-years {
+            font-size: 20px;
+            color: var(--accent);
+            margin-bottom: 40px;
+            letter-spacing: 3px;
+        }
+
         h1, h2, h3 {
             color: var(--primary);
             margin-top: 0;
@@ -232,11 +315,58 @@
             color: var(--accent);
         }
 
+        .controls-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+            background: #2c2c2c;
+            padding: 5px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            align-items: center;
+        }
+
+        .zoom-btn {
+            background: #444;
+            color: #ccc;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .zoom-btn:hover {
+            background: var(--accent);
+            color: #000;
+            transform: none;
+        }
+        
+        .zoom-level-text {
+            color: #aaa;
+            font-size: 12px;
+            min-width: 35px;
+            text-align: center;
+            user-select: none;
+        }
+
         .volume-control {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 14px;
         }
 
         .stats-panel {
@@ -465,7 +595,16 @@
 </head>
 <body>
 
+<!-- Era Auto-Fading Overlay -->
+<div id="era-overlay">
+    <div class="era-emoji" id="era-emoji">🌅</div>
+    <div class="era-title" id="era-title">Chapter Title</div>
+    <div class="era-years" id="era-years">1965 - 1969</div>
+    <p class="crisis-text" id="era-desc" style="max-width: 600px; margin: 0 auto; color: #aaa;">Era description.</p>
+</div>
+
 <div class="layout-wrapper">
+    <!-- Left Sidebar: Historical Context -->
     <div class="sidebar-box history-sidebar" id="history-box">
         <div class="history-header">
             <h2>📜 Historical Context</h2>
@@ -474,16 +613,25 @@
         </div>
     </div>
 
+    <!-- Center Container -->
     <div class="container">
         <div class="top-bar">
             <div class="year-display" id="year-display"></div>
-            <div class="volume-control">
-                <label for="volume">🔊 Vol:</label>
-                <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
-                <button id="reset-btn" onclick="resetGame()" style="display:none; margin-left: 15px;">Restart</button>
+            <div class="controls-group">
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="adjustZoom(-0.1)" title="Zoom Out">-</button>
+                    <span class="zoom-level-text" id="zoom-text">100%</span>
+                    <button class="zoom-btn" onclick="adjustZoom(0.1)" title="Zoom In">+</button>
+                </div>
+                <div class="volume-control">
+                    <label for="volume">🔊 Vol:</label>
+                    <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
+                </div>
+                <button id="reset-btn" onclick="resetGame()" style="display:none;">Restart</button>
             </div>
         </div>
 
+        <!-- Start Screen -->
         <div id="start-scene" class="scene active">
             <h1>Post-Colonial Nation Simulator</h1>
             <div class="crisis-image-container" style="background: linear-gradient(135deg, #1f1c2c, #928DAB);">🌍</div>
@@ -502,6 +650,7 @@
             <button class="primary-btn" onclick="startGame()">Begin Your Rule</button>
         </div>
 
+        <!-- Main Game Scene -->
         <div id="game-scene" class="scene">
             <h3 id="country-display" style="color: #888; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-size: 14px; margin-bottom: 15px;"></h3>
             
@@ -527,8 +676,7 @@
                 <h2 id="crisis-title">Crisis Title</h2>
                 <div id="crisis-image" class="crisis-image-container"></div>
                 <p class="crisis-text" id="crisis-text">Crisis description goes here.</p>
-                <div id="options-container">
-                </div>
+                <div id="options-container"></div>
             </div>
 
             <div id="outcome-container" class="outcome-box">
@@ -540,9 +688,18 @@
             </div>
         </div>
 
+        <!-- Final Outcome Scene -->
         <div id="end-scene" class="scene">
             <div id="snapshot-area">
                 <h1 id="end-title">1985: History Book Summary</h1>
+                
+                <!-- Leadership Badge -->
+                <div class="leadership-badge" id="leadership-badge">
+                    <div class="badge-icon" id="badge-icon">👑</div>
+                    <div class="badge-title" id="badge-title">The Golden Sovereign</div>
+                    <div class="badge-desc" id="badge-desc">You achieved a rare balance of wealth, peace, and power.</div>
+                </div>
+
                 <div id="final-summary" class="crisis-text" style="font-size: 18px;"></div>
                 
                 <div class="final-charts-grid">
@@ -562,6 +719,7 @@
         </div>
     </div>
 
+    <!-- Right Sidebar: Wiki Box -->
     <div class="sidebar-box" id="wiki-box">
         <div class="wiki-header">
             <div class="wiki-flag">🏴</div>
@@ -601,6 +759,23 @@
 </div>
 
 <script>
+    // --- ZOOM SYSTEM ---
+    let currentZoom = 1.0;
+    
+    function adjustZoom(amount) {
+        currentZoom += amount;
+        // Limit zoom bounds
+        if (currentZoom < 0.4) currentZoom = 0.4;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // Update the CSS zoom property to reflow the layout accurately
+        document.body.style.zoom = currentZoom;
+        
+        // Update the display text (e.g. 90%, 110%)
+        document.getElementById('zoom-text').innerText = Math.round(currentZoom * 100) + '%';
+    }
+
+    // --- AUDIO SYSTEM (Web Audio API) ---
     let audioCtx = null;
 
     function initAudio() {
@@ -706,6 +881,13 @@
         if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
         return num.toString();
     };
+
+    const eraData = [
+        { title: "Chapter I: The Dawn of Independence", years: "1965 - 1969", emoji: "🌅", desc: "The colonial flags have been lowered. It is time to build a new government and establish your place in the world." },
+        { title: "Chapter II: The Trials of Sovereignty", years: "1970 - 1974", emoji: "⚖️", desc: "Independence brings challenges. Internal divisions and economic struggles threaten to tear your new nation apart." },
+        { title: "Chapter III: The Cold War Crucible", years: "1975 - 1979", emoji: "☢️", desc: "The global conflict between the USA and USSR reaches your borders. You must navigate proxy wars and foreign influence." },
+        { title: "Chapter IV: Stagnation and Revolt", years: "1980 - 1984", emoji: "🔥", desc: "Twenty years of rule takes its toll. Economic crashes and angry citizens push your leadership to the absolute breaking point." }
+    ];
 
     const crises = [
         {
@@ -930,6 +1112,16 @@
         }
     ];
 
+    function calculateLeadershipTitle(w, st, str) {
+        if (w >= 7 && st >= 7 && str >= 7) return { title: "The Golden Sovereign", icon: "👑", desc: "You achieved a rare balance of incredible wealth, lasting peace, and undeniable power." };
+        if (w >= 7 && st >= 7) return { title: "The Beloved Reformer", icon: "🕊️", desc: "Your people grew wealthy and peaceful under your careful guidance." };
+        if (str >= 7 && st <= 4) return { title: "The Iron Dictator", icon: "⚔️", desc: "You ruled with an iron fist, sacrificing peace and happiness for raw military might." };
+        if (w >= 7 && str <= 4) return { title: "The Corporate Puppet", icon: "💰", desc: "You sold out your nation's independent strength for extreme wealth and foreign money." };
+        if (st >= 7 && w <= 4) return { title: "The Ascetic Idealist", icon: "🧘", desc: "You kept the peace, but your nation remained deeply impoverished and struggling." };
+        if (w <= 4 && st <= 4 && str <= 4) return { title: "The Fallen Architect", icon: "🏚️", desc: "Your policies led the newly independent nation back into complete ruin." };
+        return { title: "The Pragmatic Survivor", icon: "⚖️", desc: "You navigated the complexities of the Cold War, surviving by balancing competing interests." };
+    }
+
     function constrain(val) { return Math.max(0, Math.min(10, val)); }
 
     function saveGame() {
@@ -1087,6 +1279,21 @@
         document.getElementById(sceneId).classList.add('active');
     }
 
+    function showEra(eraIndex) {
+        const era = eraData[eraIndex];
+        document.getElementById('era-title').innerText = era.title;
+        document.getElementById('era-years').innerText = era.years;
+        document.getElementById('era-emoji').innerText = era.emoji;
+        document.getElementById('era-desc').innerText = era.desc;
+        
+        const overlay = document.getElementById('era-overlay');
+        overlay.classList.add('show');
+        
+        setTimeout(() => {
+            overlay.classList.remove('show');
+        }, 3500);
+    }
+
     function startGame() {
         initAudio();
         const nameInput = document.getElementById('country-name').value.trim() || "Republic of Zamunda";
@@ -1109,8 +1316,11 @@
         
         saveGame();
         updateUI();
+        document.getElementById('history-box').style.display = 'block';
+        document.getElementById('wiki-box').style.display = 'block';
         renderCrisis();
         showScene('game-scene');
+        showEra(0);
     }
 
     function setBarInstant(stat, val) {
@@ -1234,6 +1444,9 @@
             showFinalOutcome();
         } else {
             renderCrisis();
+            if (state.crisisIndex === 5) showEra(1);
+            if (state.crisisIndex === 10) showEra(2);
+            if (state.crisisIndex === 15) showEra(3);
         }
     }
 
@@ -1250,16 +1463,21 @@
         }, 100);
     }
 
-    function showFinalOutcome() {
+    function applyFinalState() {
         document.getElementById('history-box').style.display = 'none'; 
-        document.getElementById('end-title').innerText = "1985: History Book Summary";
-        const wTier = getTier(state.wealth, "a Prosperous Economy", "Stable Finances", "a Struggling Economy");
-        const stTier = getTier(state.stability, "enjoying Internal Peace", "managing Tense Borders", "plagued by Frequent Unrest");
-        const strTier = getTier(state.strength, "holding Powerful Regional Influence", "maintaining Moderate Strength", "operating as a Weakened State");
+        
+        const badge = calculateLeadershipTitle(state.wealth, state.stability, state.strength);
+        document.getElementById('badge-icon').innerText = badge.icon;
+        document.getElementById('badge-title').innerText = badge.title;
+        document.getElementById('badge-desc').innerText = badge.desc;
+
+        const wTier = getTier(state.wealth, "a <strong>Prosperous Economy</strong>", "<strong>Stable Finances</strong>", "a <strong>Struggling Economy</strong>");
+        const stTier = getTier(state.stability, "enjoying <strong>Internal Peace</strong>", "managing <strong>Tense Borders</strong>", "plagued by <strong>Frequent Unrest</strong>");
+        const strTier = getTier(state.strength, "holding <strong>Powerful Regional Influence</strong>", "maintaining <strong>Moderate Strength</strong>", "operating as a <strong>Weakened State</strong>");
 
         const summary = `
-        After 20 turbulent years (1965 to 1985), history will remember the nation of <strong style="color:var(--primary)">${state.countryName}</strong> as a post-colonial survivor. By the end of your era, the nation was known for having ${wTier}, while ${stTier}, and ultimately ${strTier}. You navigated the impossible choices of independence during the Cold War. <br><br>
-        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent);">
+        After ruling from 1965 to ${state.year}, history will remember the nation of <strong style="color:var(--primary)">${state.countryName}</strong> as a post-colonial survivor. By the end of your era, the nation was known for having ${wTier}, while ${stTier}, and ultimately ${strTier}. You navigated the impossible choices of independence during the Cold War. <br><br>
+        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); margin-top: 15px;">
             <strong>Starting State (1965):</strong> Transitional Republic<br>
             <strong>Ending State (${state.year}):</strong> ${state.gov}<br>
             <strong>Final Population:</strong> ${formatNumber(state.pop)}<br>
@@ -1271,37 +1489,40 @@
         drawFinalCharts();
     }
 
+    function showFinalOutcome() {
+        document.getElementById('end-title').innerText = "1985: History Book Summary";
+        applyFinalState();
+    }
+
     function showStepDownEnding() {
-        document.getElementById('history-box').style.display = 'none'; 
         document.getElementById('end-title').innerText = "1984: The Resignation";
-        const summary = `
-        <strong style="color:var(--accent)">A peaceful transition:</strong> You recognized the shifting political winds and stepped aside. Your newly independent nation avoids civil war, but your personal legacy is left to the history books. Your 19-year rule has come to an end.<br><br>
-        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent);">
-            <strong>Starting State (1965):</strong> Transitional Republic<br>
-            <strong>Ending State (${state.year}):</strong> ${state.gov}<br>
-            <strong>Final Population:</strong> ${formatNumber(state.pop)}<br>
-            <strong>Final GDP:</strong> $${formatNumber(state.gdp)} Million
-        </div>`;
-        document.getElementById('final-summary').innerHTML = summary;
-        updateUI();
-        showScene('end-scene');
-        drawFinalCharts();
+        applyFinalState();
     }
     
     function downloadSnapshot() {
         playClick();
         const element = document.getElementById('snapshot-area');
         
-        html2canvas(element, {
-            backgroundColor: '#1e1e1e',
-            scale: 2 
-        }).then(canvas => {
-            let link = document.createElement('a');
-            let safeName = state.countryName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            link.download = `${safeName}_1985_report.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        });
+        // Temporarily set zoom to 1 to prevent HTML2Canvas rendering bugs
+        const originalZoom = document.body.style.zoom;
+        document.body.style.zoom = 1;
+        
+        // Wait a frame for reflow
+        setTimeout(() => {
+            html2canvas(element, {
+                backgroundColor: '#1e1e1e',
+                scale: 2 
+            }).then(canvas => {
+                let link = document.createElement('a');
+                let safeName = state.countryName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                link.download = `${safeName}_report.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // Restore zoom
+                document.body.style.zoom = originalZoom;
+            });
+        }, 100);
     }
 
     function resetGame() {
